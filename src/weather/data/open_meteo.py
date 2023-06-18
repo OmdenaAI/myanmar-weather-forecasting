@@ -1,6 +1,5 @@
 import requests
 import pathlib
-from tqdm.auto import tqdm
 
 
 def main():
