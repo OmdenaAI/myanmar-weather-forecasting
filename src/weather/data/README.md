@@ -1,5 +1,5 @@
 # Data
-This folder contains scripts to download data. Simply run them with `python file_name.py` to download the data to the [`data/weather`](/data/weather/) directory
+This folder contains scripts to download data. Simply run them with `python path/to/file_name.py` to download the data to the [`data/weather`](/data/weather/) directory. Refer to June 24th's meeting recording for an example on how to run scripts.
 
 ## `open_meteo.py`
 This script queries [open-meteo's Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) for **daily** weather data between January 1st, 2010 and June 17th, 2023. It then downloads the response as a JSON file called `open_meteo.json` in [`/data/weather`](/data/weather/).
