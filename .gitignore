@@ -129,5 +129,5 @@ dmypy.json
 .pyre/
 
 # Data folder
-data/**/*.csv
-data/**/*.json
+data/*
+!data/**/README.md
