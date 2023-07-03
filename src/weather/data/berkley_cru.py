@@ -69,7 +69,7 @@ def main():
     cru_filename, berk_filename = url_cru.split("/")[-1], url_berk.split("/")[-1]
 
     print("Downloading CRU data...")
-    cru_path = download(url_cru, data_path / cru_filename, overwrite=True, unzip=True)
+    cru_path = download(url_cru, data_path / cru_filename, overwrite=False, unzip=True)
     print("Downloading Berkley data...")
     berk_path = download(url_berk, data_path / berk_filename)
 
