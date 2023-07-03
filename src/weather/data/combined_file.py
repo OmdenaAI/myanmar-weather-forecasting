@@ -2,6 +2,7 @@ import gzip
 import pathlib
 import requests
 import xarray as xr
+import pandas as pd
 
 
 def main():
@@ -45,7 +46,7 @@ def main():
         
         # Save the preprocessed data to a NetCDF file
         output_file = "preprocessed_cru_myanmar.dat"
-        ds_myanmar_cru.to_netcdf(output_file)
+        ds_myanmar_cru.to_netcdf(data_path / output_file)
         
         print('Data unzipped and preprocessed successfully. Preprocessed data saved to:', output_file)
     else:
@@ -74,7 +75,7 @@ def main():
         
         # Save the preprocessed data to a NetCDF file
         output_file = "preprocessed_berk_myanmar.dat"
-        df_myanmar_berk.to_netcdf(output_file)
+        df_myanmar_berk.to_netcdf(data_path / output_file)
         
         print('Data unzipped and preprocessed successfully. Preprocessed data saved to:', output_file)
     else:
