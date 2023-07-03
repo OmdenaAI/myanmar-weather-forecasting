@@ -1,4 +1,5 @@
-Requests==2.31.0
+requests==2.28.1
 pandas==2.0.2
 tqdm==4.65.0
 xarray==2023.5.0
+kaggle==1.5.13
