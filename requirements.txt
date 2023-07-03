@@ -1,1 +1,4 @@
 Requests==2.31.0
+pandas==2.0.2
+tqdm==4.65.0
+xarray==2023.5.0
