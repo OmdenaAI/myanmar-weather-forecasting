@@ -21,29 +21,10 @@ The interesting part of the data is in the key `daily`. The `open_meteo.json` fi
 }
 ```
 
-## `climate_research_unit.py`
-The code is designed to download and extract climate data from the CRU (Climatic Research Unit) dataset. It focuses specifically on the temperature data for the period from 1901 to 2022. This is a spatio-temporal dataset
+## `berkley_cru.py`
+This script uses data from two sources: [Berkley Earth](https://berkeley-earth-temperature-hr.s3.amazonaws.com/Gridded/Asia_TAVG_Gridded_1.nc) and [CRU (Climatic Research Unit)](https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.07/cruts.2304141047.v4.07/tmp/cru_ts4.07.1901.2022.tmp.dat.nc.gz). The data is downloaded and processed to contain information only about the country of Myanmar. It outputs two files **on NetCDF format**:
 
-Here's a breakdown of what the code does:
+* `preprocessed_berk_myanmar.dat`: Contains information from Berkley Earth about Myanmar with records between January/1850 and January/2023, on a monthly frequency
+* `preprocessed_cru_myanmar.dat`: Contains information from CRU about Myanmar with records between January/1910 and December/2022, on a monthly frequency
 
-* The URL variable is set to the location of the dataset file to be downloaded.
-* It specifies the path where the downloaded and extracted data file will be saved.
-* A GET request is sent to the URL using the requests module, retrieving the dataset file.
-* The response status code is checked. If the code is 200 (indicating a successful request), the file is saved.
-* The file is saved in the specified data_path directory with the name "cru_ts4.07.1901.2022.tmp.dat.nc.gz". The response content is written to the file using the "wb" (write binary) mode.
-* If the request is not successful (status code other than 200), an error message is printed indicating the failure.
-
-## `berkely_earth.py`
-The code provided retrieves a specific URL, scrapes the HTML content of the page, and searches for a link with the specified href attribute. It then attempts to download the file associated with that link and save it to a specified directory.
-
-Here's how the code works:
-
-* The URL variable is set to the desired URL of the Berkeley Earth data page.
-* It specifies the path where the downloaded and extracted data file will be saved.
-* A GET request is sent to the URL using the requests module to retrieve the HTML content of the page.
-* The HTML content is parsed using BeautifulSoup and stored in the soup variable.
-* The code searches for a specific link with the href attribute matching the given value. If the link is found, the URL of the Asia data is extracted from the href attribute and stored in the asia_data_url variable. If the link is not found, an appropriate message is printed.
-* Another GET request is sent to the Asia data URL to download the file.
-* The code checks if the request was successful by verifying the response status code. If it is 200 (indicating a successful request), the file is saved.
-* The file is saved in the specified data_path directory with the name extracted from the asia_data_url. The response content is written to the file using the "wb" (write binary) mode.
-* If the request is not successful (status code other than 200), an error message is printed.
+NetCDF is a very popular format in the cientific community, and one useful library to deal with data in this format records is [xarray](https://docs.xarray.dev/en/stable/)
