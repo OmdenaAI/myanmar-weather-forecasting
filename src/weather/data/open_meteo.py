@@ -1,5 +1,7 @@
 import requests
 import pathlib
+import pathlib
+import pandas as pd
 
 
 def main():
@@ -15,25 +17,32 @@ def main():
         "max": "2023-06-17",
     }
 
-    data_path = (
-        pathlib.Path(__file__).parent.parent.parent.parent  # Repository root
-        / "data"
-        / "weather"
-        / "open_meteo.json"
-    )
-
-    if data_path.is_file():
-        # File already exists
-        return
-
+    print("Querying weather API...")
     res = requests.get(url, params=params)
 
     if res.status_code != 200:
         res.raise_for_status()
         raise RuntimeError(f"Request to {url} returned status code {res.status_code}")
 
-    with data_path.open("wb") as f:
-        f.write(res.content)
+    data = res.json()
+
+    # Convert data to tabular format and add some metadata
+    print("Preprocessing...")
+    df = pd.DataFrame(data["daily"])
+    df["latitude"] = data["latitude"]
+    df["longitude"] = data["longitude"]
+    df["elevation"] = data["elevation"]
+    df["country"] = "Myanmar"
+    df["city"] = "Tha Phay Wa"
+
+    data_path = (
+        pathlib.Path(__file__).parent.parent.parent.parent  # Repository root
+        / "data"
+        / "weather"
+    )
+    file_name = "open_meteo.csv"
+
+    df.to_csv(data_path / file_name, index=False)
 
 
 if __name__ == "__main__":
