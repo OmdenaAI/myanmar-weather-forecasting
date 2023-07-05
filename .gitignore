@@ -127,6 +127,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-# Kaggle API Key
-./src/traffic/models/Traffic Density Singapore/Kaggle/kaggle.json
