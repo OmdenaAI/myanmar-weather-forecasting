@@ -33,8 +33,6 @@ Machine learning can be used to analyze the traffic patterns and real-time input
         └── weather|traffic
             ├── data           <- Scripts to download or generate data
             │
-            ├── features       <- Scripts to turn raw data into features for modeling
-            │
             ├── models         <- Scripts to train models and then use trained models to make predictions
             │
             └── visualization  <- Code and Visualization dashboards generated for the project
