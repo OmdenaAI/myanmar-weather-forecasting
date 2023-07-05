@@ -1,6 +1,5 @@
 import requests
 import pathlib
-import pathlib
 import pandas as pd
 
 

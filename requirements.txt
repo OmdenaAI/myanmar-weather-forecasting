@@ -3,3 +3,5 @@ pandas==2.0.2
 tqdm==4.65.0
 xarray==2023.5.0
 kaggle==1.5.13
+matplotlib==3.6.3
+prophet==1.1.4
