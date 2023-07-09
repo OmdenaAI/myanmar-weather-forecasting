@@ -18,3 +18,8 @@ This script downloads two files from [Dataportal.asia](https://dataportal.asia/d
 * `average-daily-traffic-volume-entering-the-city-2017-04-02T13-15-50Z.csv`: Contains daily traffic volume recorded between 7.30am-7.00pm on weekdays.
 
 * `average-speed-during-peak-hours.csv`: Contains average speed in expressways and arterial roads for peak hour periods, i.e. 8 to 9am and 6 to 7pm on weekdays.
+
+## Download Singapore Traffic Density Dataset
+
+Run this command to download the dataset from kaggle: <br>
+`!kaggle datasets download -d rahat52/traffic-density-singapore --unzip`
