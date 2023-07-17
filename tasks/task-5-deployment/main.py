@@ -23,8 +23,7 @@ if selected == 'Home':
     st.markdown('•	Improve the quality of life for individuals by reducing travel time and enhancing mobility.')
 elif selected == 'About':
     st.header('_Project Background_')
-    image = 'myanmar.jpg'
-    st.image(image, use_column_width=True)
+    st.image('myanmar.jpg', use_column_width=True)
     st.markdown('Extreme weather events in Southeast Asian countries, including heatwaves. They have resulted in severe consequences, including loss of life due to heat-related illnesses. Accurate weather forecasting is crucial for proactive risk mitigation. This project aims to develop an advanced weather forecasting system using meteorological data, and machine learning algorithms to enhance predictions, protect lives, and build community resilience.')
     st.markdown('Traffic congestion is a pressing issue in Southeast Asian countries, leading to increased travel time, economic losses, and environmental pollution. This project focuses on reducing congestion by implementing innovative strategies and collaborating with transportation authorities, urban planners, and community stakeholders. Our interventions include optimizing traffic signal timing, implementing intelligent transportation systems, promoting alternative transportation modes, and encouraging carpooling. By alleviating congestion, we aim to improve quality of life, enhance productivity, reduce emissions, and foster sustainable transportation systems.')
     
