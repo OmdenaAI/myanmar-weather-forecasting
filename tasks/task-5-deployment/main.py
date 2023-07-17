@@ -33,7 +33,7 @@ elif selected == 'About':
     
 elif selected == 'Forecasting The Weather':
     st.header("_Forecasting the Myanmar Weather_")
-    model = pd.read_pickle("yangoon_windspeed_forecast.pkl")
+    model = pd.read_pickle("tasks/task-5-deployment/yangoon_windspeed_forecast.pkl")
     date = st.text_input('Date')
     ws = st.text_input('Wind Speed')
     df = pd.DataFrame({"ds":[date],'y':[ws]})
