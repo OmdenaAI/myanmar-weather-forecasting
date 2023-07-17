@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-
+import pickle
+import pandas as pd
 st.title('Forecasting The Weather & Traffic Congestion')
 
 selected = option_menu(menu_title=None,options=['Home','Forecasting The Weather','Reduce Traffic Congestion','About'], 
@@ -31,4 +32,11 @@ elif selected == 'About':
     st.markdown('Traffic congestion is a pressing issue in Singapore, leading to increased travel time, economic losses, and environmental pollution. This project focuses on reducing congestion by implementing innovative strategies and collaborating with transportation authorities, urban planners, and community stakeholders. :red[Our interventions include seeing so many cars that we can identify that this traffic is jammed.] By alleviating congestion, we aim to improve quality of life, enhance productivity, reduce emissions, and foster sustainable transportation systems.')
     
 elif selected == 'Forecasting The Weather':
-    st.caption("Here is the forecast for Myanmar Weather.")
+    st.header("_Forecasting the Myanmar Weather_")
+    model = pd.read_pickle("yangoon_windspeed_forecast.pkl")
+    date = st.text_input('Date')
+    ws = st.text_input('Wind Speed')
+    df = pd.DataFrame({"ds":[date],'y':[ws]})
+    st.write(model.predict(df))
+elif selected == 'Reduce Traffic Congestion':
+    st.header("_Traffic Congestion of Singapore_")
