@@ -1,6 +1,5 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-from PIL import Image
 
 st.title('Forecasting The Weather & Traffic Congestion')
 
@@ -25,13 +24,9 @@ if selected == 'Home':
     st.markdown('•	Improve the quality of life for individuals by reducing travel time and enhancing mobility.')
 elif selected == 'About':
     st.header('_Project Background_')
-    image = Image.open('<img src="https://github.com/OmdenaAI/myanmar-weather-forecasting/blob/main/tasks/task-5-deployment/Bagan-Temples.jpg" alt="Bagan Temples">')
 
 
-    st.image(image)
     st.markdown('Extreme weather events in Myanmar, including heatwaves. They have resulted in severe consequences, including loss of life due to heat-related illnesses. Accurate weather forecasting is crucial for proactive risk mitigation. :red[This project aims to develop an advanced weather forecasting system using historical data, and machine learning algorithms to enhance predictions, protect lives, and build community resilience.]')
-    image2 = Image.open('images (1).jpeg')
-    st.image(image2,width=700)
     st.markdown('Traffic congestion is a pressing issue in Singapore, leading to increased travel time, economic losses, and environmental pollution. This project focuses on reducing congestion by implementing innovative strategies and collaborating with transportation authorities, urban planners, and community stakeholders. :red[Our interventions include seeing so many cars that we can identify that this traffic is jammed.] By alleviating congestion, we aim to improve quality of life, enhance productivity, reduce emissions, and foster sustainable transportation systems.')
     
 elif selected == 'Forecasting The Weather':
