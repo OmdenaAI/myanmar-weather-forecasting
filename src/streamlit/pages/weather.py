@@ -3,15 +3,24 @@ import pandas as pd
 import numpy as np
 import pathlib
 from streamlit_folium import st_folium
+from prophet.serialize import model_from_json
 import folium
+import datetime as dt
 from math import cos, asin, sqrt, pi
 
 
 @st.cache_data
 def get_data():
     data_path = pathlib.Path(__file__).parents[3] / "data"
+    df = pd.read_csv(data_path / "weather" / "open_meteo.csv")
 
-    return pd.read_csv(data_path / "weather" / "open_meteo.csv")
+    city_info_cols = ["city", "country", "latitude", "longitude"]
+    # Get unique combinations of city_info_cols
+    cities_index = pd.DataFrame(
+        df.groupby(city_info_cols).groups.keys(), columns=city_info_cols
+    )
+
+    return df, cities_index
 
 
 @st.cache_data
@@ -47,6 +56,50 @@ def get_nearest_city(lat, lng, cities_df):
     return closest_city
 
 
+@st.cache_data
+def get_models_for_city(name, country):
+    st.write("Fetching models...")
+    models = []
+    models_dir = (
+        pathlib.Path(__file__).parents[3] / "models" / country / city / "prophet"
+    )
+
+    for model_path in models_dir.glob("*.json"):
+        splitted = model_path.name.split("_")
+        train_start = splitted[-2]
+        train_end = splitted[-1].removesuffix(".json")
+        var_name = "_".join(splitted[:-2])
+
+        with model_path.open("r") as f:
+            models.append(
+                {
+                    "file": model_path.name,
+                    "predictor": model_from_json(f.read()),
+                    "variable": var_name,
+                    "train_start": train_start,
+                    "train_end": train_end,
+                }
+            )
+
+    return models
+
+
+def run_forecasting_models():
+    if "date_input" not in st.session_state or len(st.session_state["date_input"]) < 2:
+        return
+
+    if "forecasting_results" in st.session_state:
+        # reuse old results
+        pass
+    else:
+        st.session_state["forecasting_results"] = {
+            "period": (
+                st.session_state["date_input"][0],
+                st.session_state["date_input"][1],
+            ),
+        }
+
+
 if "center" not in st.session_state:
     st.session_state["center"] = (9.45, 120.76)
 
@@ -54,13 +107,7 @@ if "center" not in st.session_state:
 st.header("Weather Forecasting")
 
 
-df = get_data()
-
-cities_df = (
-    df.groupby(["city", "country", "latitude", "longitude"])
-    .count()
-    .reset_index()[["city", "country", "latitude", "longitude"]]
-)
+df, cities_df = get_data()
 
 m = folium.Map(location=st.session_state["center"], zoom_start=4, tiles="OpenStreetMap")
 
@@ -74,11 +121,10 @@ for _, city, country, lat, lng in cities_df.itertuples():
 # try to search for map info(sha256) in session_state
 lat, lng = None, None
 for value in st.session_state.values():
-    if "last_clicked" in value:
+    if isinstance(value, dict) and "last_clicked" in value:
         lat, lng = value["last_clicked"].values()
         fg.add_child(folium.Marker((lat, lng)))
-
-st.write(st.session_state)
+        break
 
 st.subheader("Select a location on the map")
 
@@ -95,9 +141,18 @@ if lat is not None and lng is not None:
     city, country, *_ = get_nearest_city(lat, lng, cities_df)
     st.write(f"The nearest city is {city} - {country}")
 
-    st.write("Fetching data")
+    forecast_date = st.date_input(
+        "Select the period you wish to forecast",
+        key="date_input",
+        on_change=run_forecasting_models,
+        value=(dt.datetime.today(), dt.datetime.today() + dt.timedelta(days=30)),
+    )
 
-    city_df = get_city_data(city, country, df)
-    st.dataframe(city_df)
+    st.session_state["models"] = get_models_for_city(city, country)
+    st.write(st.session_state)
 
-    st.header("Visualizations")
+    for model_info in st.session_state["models"]:
+        st.subheader(f"Forecasting {model_info['variable']}")
+        future = model_info["predictor"].make_future_dataframe(periods=30)
+        data = model_info["predictor"].predict(future).tail(50)
+        st.line_chart(data=data, x="ds", y="yhat", use_container_width=True)
