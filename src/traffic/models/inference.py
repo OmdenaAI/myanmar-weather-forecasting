@@ -1,24 +1,14 @@
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from pylab import rcParams
 
 import cv2
-from tqdm.notebook import tqdm
-import os
 from pathlib import Path
 
 import torch
 import torch.nn as nn
-from torch import nn, optim
-import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
-import torchvision
+from torch import nn
 from torchvision.models import resnet18, efficientnet_b0, mobilenet_v2, efficientnet_v2_s
 
 from albumentations import Compose, Normalize, Resize
-from torch.autograd import Variable
 
 if torch.cuda.is_available():
     device = 'cuda:0'
@@ -26,10 +16,7 @@ if torch.cuda.is_available():
 else:
     device = 'cpu'
 
-Res18_config= {'network': 'resnet18', 'in_channels': 224, 'num_classes': 5} 
-ENb0_config= {'network': 'efficientnet-b0', 'in_channels': 224, 'num_classes': 5}
-MNv2_config= {'network': 'mobilenet_v2', 'in_channels': 224, 'num_classes': 5}
-ENv2_config= {'network': 'efficientnet_v2_s', 'in_channels': 224, 'num_classes': 5}
+Res18_config= {'network': 'resnet18', 'num_classes': 5} 
 
 preprocess= Compose([
     Resize(224, 224),
@@ -59,7 +46,6 @@ class _TrafficClassifier(nn.Module):
     def __init__(self, cfg):
         super(_TrafficClassifier, self).__init__()
         self.num_classes= cfg['num_classes']
-        self.in_channels= cfg['in_channels']
         self.network= cfg['network']
 
         if cfg['network'] == "resnet18":
@@ -106,66 +92,26 @@ class _TrafficClassifier(nn.Module):
 
     def initialize_resnet18(self):
         print('[*] Initializing new resnet18 network...')
-        # we need to modify the input (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False) 
-        # and output layers (fc): Linear(in_features=512, out_features=1000, bias=True)
         self.encoder = resnet18(pretrained=True).to(device)
 
-        # modifying input layer.
-        self.encoder.conv1 = nn.Conv2d(
-            self.in_channels,
-            64,
-            kernel_size=7,
-            stride=2,
-            padding=3,
-            bias=False
-        )
-        
-        # modifying output layer.
         self.encoder.fc = nn.Linear(512, self.num_classes, bias= True)
 
     def initialize_enb0(self):
         print('[*] Initializing new efficientnet-b0 network...')
         self.encoder = efficientnet_b0(pretrained=True).to(device)
         
-        self.encoder.features[0][0] = nn.Conv2d(
-            self.in_channels,
-            32,
-            kernel_size=3,
-            stride=2,
-            padding=1,
-            bias=False
-        )
-
         self.encoder.classifier[1]= nn.Linear(1280, self.num_classes, bias= True)
 
     def initialize_mnv2(self):
         print('[*] Initializing new mobilenet_v2 network...')
         self.encoder = mobilenet_v2(pretrained=True).to(device)
         
-        self.encoder.features[0][0] = nn.Conv2d(
-            self.in_channels,
-            32,
-            kernel_size=3,
-            stride=2,
-            padding=1,
-            bias=False
-        )
-
         self.encoder.classifier[1]= nn.Linear(1280, self.num_classes, bias= True)
 
     def initialize_en_v2(self):
         print('[*] Initializing new efficientnet-v2 network...')
         self.encoder = efficientnet_v2_s(pretrained=True).to(device)
         
-        self.encoder.features[0][0] = nn.Conv2d(
-            self.in_channels,
-            24,
-            kernel_size=3,
-            stride=2,
-            padding=1,
-            bias=False
-        )
-
         self.encoder.classifier[1]= nn.Linear(1280, self.num_classes, bias= True)
   
     def _get_index_of_matched_value(self, dictionary, value):
@@ -185,6 +131,7 @@ class _TrafficClassifier(nn.Module):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img= preprocess(image= img) # resizing is important
         _img= np.expand_dims(img['image'], axis= 0)
+        _img= np.transpose(_img, (0, 3, 1, 2))
         _img= torch.tensor(_img)
         _img.to(device)
         with torch.no_grad():
@@ -198,7 +145,7 @@ class _TrafficClassifier(nn.Module):
 
 def ResNet18():
     """
-    >>>model= ResNet18()
+    >>>model= ResNet18() # model has to be in ../models_run/resnet18/resnet.pth
     >>>pred= model.inference(path/to/img)
     """
     repository_root = Path.cwd().parent.parent.parent.parent
@@ -206,3 +153,18 @@ def ResNet18():
     load_path= save_dir / "resnet18" / "resnet18.pth"
     loaded_model= TrafficClassifier(load_path= load_path, cfg=Res18_config)
     return loaded_model
+
+
+def load_model(model_path, model_cfg):
+    """
+    Args:
+        model_path: the path to the model to be loaded (Resnet/ENb0)
+        model_cfg: dictionary containing the configurations to build the classifier
+
+    Example:
+        >>> ENb0_model= load_model(path/to/ENb0.pth, ENb0_config)
+        >>> pred= ENb0_model.inference(path/to/img)
+    """
+    loaded_model= TrafficClassifier(load_path= model_path, cfg=model_cfg)
+    return loaded_model
+    
