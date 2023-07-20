@@ -17,6 +17,7 @@ else:
     device = 'cpu'
 
 Res18_config= {'network': 'resnet18', 'num_classes': 5} 
+ENb0_config= {'network': 'efficientnet-b0', 'num_classes': 5}
 
 preprocess= Compose([
     Resize(224, 224),
@@ -148,20 +149,33 @@ def ResNet18():
     >>>model= ResNet18() # model has to be in ../models_run/resnet18/resnet.pth
     >>>pred= model.inference(path/to/img)
     """
-    repository_root = Path.cwd().parent.parent.parent.parent
+    repository_root = Path(__file__).parent.parent.parent.parent.parent
     save_dir= repository_root / "myanmar-weather-forecasting" / "src" / "traffic" / "models" / "models_runs"
     load_path= save_dir / "resnet18" / "resnet18.pth"
     loaded_model= TrafficClassifier(load_path= load_path, cfg=Res18_config)
     return loaded_model
 
+def ENb0():
+    """
+    >>>model= ENb0() # model has to be in ../models_run/efficientnet-b0/efficientnet-b0.pth
+    >>>pred= model.inference(path/to/img)
+    """
+    repository_root = Path(__file__).parent.parent.parent.parent.parent
+    save_dir= repository_root / "myanmar-weather-forecasting" / "src" / "traffic" / "models" / "models_runs"
+    load_path= save_dir / "efficientnet-b0" / "efficientnet-b0.pth"
+    loaded_model= TrafficClassifier(load_path= load_path, cfg=ENb0_config)
+    return loaded_model
 
 def load_model(model_path, model_cfg):
     """
+    Use it to load the model from any directory
+
     Args:
         model_path: the path to the model to be loaded (Resnet/ENb0)
         model_cfg: dictionary containing the configurations to build the classifier
 
     Example:
+        >>> ENb0_config= {'network': 'efficientnet-b0', 'num_classes': 5}
         >>> ENb0_model= load_model(path/to/ENb0.pth, ENb0_config)
         >>> pred= ENb0_model.inference(path/to/img)
     """
