@@ -92,6 +92,10 @@ def get_models_for_city(city, country):
 if "center" not in st.session_state:
     st.session_state["center"] = (9.45, 120.76)
 
+st.set_page_config(
+    page_title="Omdena Myanmar Local Chapter - Weather",
+    page_icon="src/streamlit/img/favicon.png",
+)
 
 st.header("Weather Forecasting")
 

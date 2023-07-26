@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import pathlib
 
+st.set_page_config(
+    page_title="Omdena Myanmar Local Chapter", page_icon="src/streamlit/img/favicon.png"
+)
 st.header("_The Problem_")
 st.markdown(
     ":red[Weather Forecasting]: The problem is the occurrence of extreme weather"
