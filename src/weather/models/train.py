@@ -7,7 +7,7 @@ from prophet.serialize import model_to_json
 
 def main():
     data_path = pathlib.Path(__file__).parents[3] / "data" / "weather"
-    save_dir = pathlib.Path(__file__).parents[3] / "models"
+    save_dir = pathlib.Path(__file__).parents[3] / "models" / "weather"
 
     full_df = pd.read_csv(data_path / "open_meteo.csv")
     full_df["time"] = pd.to_datetime(full_df["time"])
@@ -41,7 +41,7 @@ def main():
             )
 
             print(f"Training {var} forecasting model for {city}-{country}")
-            model = Prophet()
+            model = Prophet(yearly_seasonality=20)
             model.fit(train_df)
             future = model.make_future_dataframe(periods=len(test_df))
             preds = model.predict(future)

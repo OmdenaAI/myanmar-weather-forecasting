@@ -57,11 +57,16 @@ def get_nearest_city(lat, lng, cities_df):
 
 
 @st.cache_data
-def get_models_for_city(name, country):
+def get_models_for_city(city, country):
     st.write("Fetching models...")
     models = []
     models_dir = (
-        pathlib.Path(__file__).parents[3] / "models" / country / city / "prophet"
+        pathlib.Path(__file__).parents[3]
+        / "models"
+        / "weather"
+        / country
+        / city
+        / "prophet"
     )
 
     for model_path in models_dir.glob("*.json"):
@@ -82,22 +87,6 @@ def get_models_for_city(name, country):
             )
 
     return models
-
-
-def run_forecasting_models():
-    if "date_input" not in st.session_state or len(st.session_state["date_input"]) < 2:
-        return
-
-    if "forecasting_results" in st.session_state:
-        # reuse old results
-        pass
-    else:
-        st.session_state["forecasting_results"] = {
-            "period": (
-                st.session_state["date_input"][0],
-                st.session_state["date_input"][1],
-            ),
-        }
 
 
 if "center" not in st.session_state:
@@ -135,24 +124,48 @@ map_data = st_folium(
     feature_group_to_add=fg,
     returned_objects=["last_clicked"],
 )
+
 if lat is not None and lng is not None:
     st.write(f"Selected location: Lat: {lat} Lng: {lng}")
 
     city, country, *_ = get_nearest_city(lat, lng, cities_df)
     st.write(f"The nearest city is {city} - {country}")
 
-    forecast_date = st.date_input(
-        "Select the period you wish to forecast",
+    date_container = st.container()
+    graphs_container = st.container()
+
+    date_container.date_input(
+        "Select the period you wish to know the forecast for",
         key="date_input",
-        on_change=run_forecasting_models,
         value=(dt.datetime.today(), dt.datetime.today() + dt.timedelta(days=30)),
+        min_value=dt.datetime(year=2021, month=1, day=1),
     )
 
     st.session_state["models"] = get_models_for_city(city, country)
-    st.write(st.session_state)
+    # st.write(st.session_state)
 
-    for model_info in st.session_state["models"]:
-        st.subheader(f"Forecasting {model_info['variable']}")
-        future = model_info["predictor"].make_future_dataframe(periods=30)
-        data = model_info["predictor"].predict(future).tail(50)
-        st.line_chart(data=data, x="ds", y="yhat", use_container_width=True)
+    if "date_input" not in st.session_state or len(st.session_state["date_input"]) < 2:
+        pass
+
+    else:
+        for model_info in st.session_state["models"]:
+            st.subheader(f"Forecasting {model_info['variable']} from scratch")
+            train_end = dt.datetime.strptime(
+                model_info["train_end"], "%Y-%m-%d %H:%M:%S"
+            ).date()
+
+            period_start = st.session_state["date_input"][0]
+            period_end = st.session_state["date_input"][1]
+
+            days_to_predict = (period_end - train_end).days
+            days_to_show = (period_end - period_start).days
+
+            future = model_info["predictor"].make_future_dataframe(
+                periods=days_to_predict
+            )
+            st.line_chart(
+                data=model_info["predictor"].predict(future).iloc[-days_to_show:],
+                x="ds",
+                y="yhat",
+                use_container_width=True,
+            )
