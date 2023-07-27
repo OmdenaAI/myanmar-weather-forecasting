@@ -6,6 +6,7 @@ from streamlit_folium import st_folium
 from prophet.serialize import model_from_json
 import folium
 import datetime as dt
+import altair as alt
 from math import cos, asin, sqrt, pi
 
 
@@ -51,14 +52,13 @@ def get_nearest_city(lat, lng, cities_df):
 
         if hav_dist < min_:
             min_ = hav_dist
-            closest_city = (city, country, latitude, longitude)
+            closest_city = (city, country, latitude, longitude, hav_dist)
 
     return closest_city
 
 
 @st.cache_data
 def get_models_for_city(city, country):
-    st.write("Fetching models...")
     models = []
     models_dir = (
         pathlib.Path(__file__).parents[3]
@@ -97,6 +97,7 @@ st.set_page_config(
     page_icon="src/streamlit/img/favicon.png",
 )
 
+
 st.header("Weather Forecasting")
 
 
@@ -130,28 +131,46 @@ map_data = st_folium(
 )
 
 if lat is not None and lng is not None:
-    st.write(f"Selected location: Lat: {lat} Lng: {lng}")
+    city, country, *_, distance_km = get_nearest_city(lat, lng, cities_df)
+    lat_col, lng_col, city_col, distance_col = st.columns(4)
 
-    city, country, *_ = get_nearest_city(lat, lng, cities_df)
-    st.write(f"The nearest city is {city} - {country}")
+    lat_col.metric(
+        label="Latitude", value=f"{lat:.2f}", help="Latitude in decimal degrees"
+    )
+    lng_col.metric(
+        label="Longitude", value=f"{lng:.2f}", help="Longitude in decimal degrees"
+    )
+    city_col.metric(
+        label="Nearest city",
+        value=f"{city}",
+        help="Source of the data we'll be using for the prediction",
+    )
 
-    date_container = st.container()
-    graphs_container = st.container()
+    distance_col.metric(
+        label="Distance",
+        value=f"{distance_km:.2f} Km",
+        help="Distance in Km from nearest city to marker on the map",
+    )
 
-    date_container.date_input(
-        "Select the period you wish to know the forecast for",
+    if distance_km > 400:
+        st.warning(
+            "Selected location is far from any of the reference cities. This may result"
+            " in a worse forecast"
+        )
+
+    st.subheader("Range to forecast")
+    st.date_input(
+        label="Select the period you wish to know the forecast for",
         key="date_input",
         value=(dt.datetime.today(), dt.datetime.today() + dt.timedelta(days=30)),
         min_value=dt.datetime(year=2021, month=1, day=1),
+        label_visibility="collapsed",
     )
 
-    st.session_state["models"] = get_models_for_city(city, country)
-    # st.write(st.session_state)
+    with st.spinner("Fetching models..."):
+        st.session_state["models"] = get_models_for_city(city, country)
 
-    if "date_input" not in st.session_state or len(st.session_state["date_input"]) < 2:
-        pass
-
-    else:
+    if "date_input" in st.session_state and len(st.session_state["date_input"]) >= 2:
         for model_info in st.session_state["models"]:
             st.subheader(f"Forecasting {model_info['variable']} from scratch")
             train_end = dt.datetime.strptime(
@@ -167,9 +186,42 @@ if lat is not None and lng is not None:
             future = model_info["predictor"].make_future_dataframe(
                 periods=days_to_predict
             )
-            st.line_chart(
-                data=model_info["predictor"].predict(future).iloc[-days_to_show:],
-                x="ds",
-                y="yhat",
+
+            chart_data = model_info["predictor"].predict(future).iloc[-days_to_show:]
+            line = (
+                alt.Chart(chart_data)
+                .mark_line()
+                .encode(
+                    x=alt.X("ds").title("Date"),
+                    y=alt.Y("yhat").title(model_info["variable"]),
+                )
+            )
+
+            hover = alt.selection_single(
+                fields=["ds"],
+                nearest=True,
+                on="mouseover",
+                empty="none",
+            )
+
+            points = line.transform_filter(hover).mark_circle(size=65)
+
+            tooltips = (
+                alt.Chart(chart_data)
+                .mark_rule()
+                .encode(
+                    x="ds",
+                    y="yhat",
+                    opacity=alt.condition(hover, alt.value(0.3), alt.value(0)),
+                    tooltip=[
+                        alt.Tooltip("ds", title="Date"),
+                        alt.Tooltip("yhat", title=model_info["variable"]),
+                    ],
+                )
+                .add_selection(hover)
+            )
+            st.altair_chart(
+                (line + points + tooltips).interactive(),
                 use_container_width=True,
+                theme="streamlit",
             )
