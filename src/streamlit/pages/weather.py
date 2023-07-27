@@ -89,9 +89,6 @@ def get_models_for_city(city, country):
     return models
 
 
-if "center" not in st.session_state:
-    st.session_state["center"] = (9.45, 120.76)
-
 st.set_page_config(
     page_title="Omdena Myanmar Local Chapter - Weather",
     page_icon="src/streamlit/img/favicon.png",
@@ -103,7 +100,8 @@ st.header("Weather Forecasting")
 
 df, cities_df = get_data()
 
-m = folium.Map(location=st.session_state["center"], zoom_start=4, tiles="OpenStreetMap")
+# (9.45, 120.76) are the coordinates of somewhere in the center of SEA
+m = folium.Map(location=(9.45, 120.76), zoom_start=4, tiles="OpenStreetMap")
 
 fg = folium.FeatureGroup(name="markers")
 
@@ -159,10 +157,11 @@ if lat is not None and lng is not None:
         )
 
     st.subheader("Range to forecast")
+    st.caption("Select a start and end date")
     st.date_input(
         label="Select the period you wish to know the forecast for",
         key="date_input",
-        value=(dt.datetime.today(), dt.datetime.today() + dt.timedelta(days=30)),
+        value=(dt.datetime.today(), dt.datetime.today() + dt.timedelta(weeks=24)),
         min_value=dt.datetime(year=2021, month=1, day=1),
         label_visibility="collapsed",
     )
@@ -171,31 +170,102 @@ if lat is not None and lng is not None:
         st.session_state["models"] = get_models_for_city(city, country)
 
     if "date_input" in st.session_state and len(st.session_state["date_input"]) >= 2:
-        for model_info in st.session_state["models"]:
-            st.subheader(f"Forecasting {model_info['variable']} from scratch")
-            train_end = dt.datetime.strptime(
-                model_info["train_end"], "%Y-%m-%d %H:%M:%S"
-            ).date()
+        var_info = {
+            "temperature_2m_min": "Temperature",
+            "temperature_2m_max": "Temperature",
+            "temperature_2m_mean": "Temperature",
+            "rain_sum": "Rain",
+            "windspeed_10m_max": "Wind speed",
+        }
+        group_info = {
+            "Temperature": "°C",
+            "Rain": "mm",
+            "Wind speed": "km/h",
+        }
 
-            period_start = st.session_state["date_input"][0]
-            period_end = st.session_state["date_input"][1]
+        charts_data = {}
+        with st.spinner("Running prediction models..."):
+            for model_info in st.session_state["models"]:
+                current_var = model_info["variable"]
+                train_end = dt.datetime.strptime(
+                    model_info["train_end"], "%Y-%m-%d %H:%M:%S"
+                ).date()
 
-            days_to_predict = (period_end - train_end).days
-            days_to_show = (period_end - period_start).days
+                period_start = st.session_state["date_input"][0]
+                period_end = st.session_state["date_input"][1]
 
-            future = model_info["predictor"].make_future_dataframe(
-                periods=days_to_predict
-            )
+                days_to_predict = (period_end - train_end).days
+                days_to_show = (period_end - period_start).days
 
-            chart_data = model_info["predictor"].predict(future).iloc[-days_to_show:]
-            line = (
-                alt.Chart(chart_data)
-                .mark_line()
-                .encode(
-                    x=alt.X("ds").title("Date"),
-                    y=alt.Y("yhat").title(model_info["variable"]),
+                future = model_info["predictor"].make_future_dataframe(
+                    periods=days_to_predict
                 )
-            )
+
+                predictions = (
+                    model_info["predictor"].predict(future).iloc[-days_to_show:]
+                )
+
+                if var_info[current_var] == "Temperature":
+                    if "Temperature" not in charts_data:
+                        charts_data["Temperature"] = [predictions["ds"]]
+
+                    charts_data["Temperature"].append(
+                        predictions["yhat"].rename(current_var.split("_")[-1])
+                    )
+                    continue
+
+                charts_data[var_info[current_var]] = [predictions]
+
+        # plotting charts
+        for group, predictions in charts_data.items():
+            st.subheader(f"{group}")
+
+            if group == "Temperature":
+                chart_data = pd.concat(
+                    predictions,
+                    axis="columns",
+                ).melt(id_vars="ds", var_name="Temperature", value_name="yhat")
+
+                line = (
+                    alt.Chart(chart_data)
+                    .mark_line()
+                    .encode(
+                        x=alt.X("ds").title("Date"),
+                        y=alt.Y("yhat").title(f"{group} ({group_info[group]})"),
+                        color=alt.Color(
+                            "Temperature",
+                            scale=alt.Scale(
+                                domain=["max", "mean", "min"],
+                                range=["#f96d6d", "#add8fe", "#5694d7"],
+                            ),
+                            legend=alt.Legend(orient="top"),
+                        ),
+                    )
+                )
+
+            elif group == "Wind speed":
+                [chart_data] = predictions
+                # main line
+                line = (
+                    alt.Chart(chart_data)
+                    .mark_line()
+                    .encode(
+                        x=alt.X("ds").title("Date"),
+                        y=alt.Y("yhat").title(f"{group} ({group_info[group]})"),
+                    )
+                )
+
+            elif group == "Rain":
+                [chart_data] = predictions
+                # main line
+                line = (
+                    alt.Chart(chart_data)
+                    .mark_line()
+                    .encode(
+                        x=alt.X("ds").title("Date"),
+                        y=alt.Y("yhat").title(f"{group} ({group_info[group]})"),
+                    )
+                )
 
             hover = alt.selection_single(
                 fields=["ds"],
@@ -204,8 +274,10 @@ if lat is not None and lng is not None:
                 empty="none",
             )
 
+            # make points on the line on hover
             points = line.transform_filter(hover).mark_circle(size=65)
 
+            # vertical line and tooltip
             tooltips = (
                 alt.Chart(chart_data)
                 .mark_rule()
@@ -215,11 +287,15 @@ if lat is not None and lng is not None:
                     opacity=alt.condition(hover, alt.value(0.3), alt.value(0)),
                     tooltip=[
                         alt.Tooltip("ds", title="Date"),
-                        alt.Tooltip("yhat", title=model_info["variable"]),
+                        alt.Tooltip(
+                            "yhat",
+                            title=f"{group} ({group_info[group]})",
+                        ),
                     ],
                 )
                 .add_selection(hover)
             )
+
             st.altair_chart(
                 (line + points + tooltips).interactive(),
                 use_container_width=True,
