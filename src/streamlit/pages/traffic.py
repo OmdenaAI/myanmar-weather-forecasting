@@ -16,6 +16,7 @@ option = st.selectbox(
     options=["EfficientNet", "ResNet"],
     label_visibility="collapsed",
 )
+st.divider()
 
 st.subheader("Upload an image of traffic to classify")
 uploaded_file = st.file_uploader(
@@ -41,8 +42,9 @@ sample_img = image_select(
 traffic_map = {"Empty": 0, "Low": 25, "Medium": 50, "High": 75, "Traffic Jam": 100}
 predicted_class = None
 if uploaded_file is not None:
-    img_bytes = uploaded_file.read()
+    st.divider()
     st.subheader("Image preview")
+    img_bytes = uploaded_file.read()
     st.image(img_bytes)
     with st.spinner(f"Loading {option}"):
         model = model_map[option]()
@@ -50,6 +52,7 @@ if uploaded_file is not None:
     predicted_class = model.inference(img_bytes)
 
 elif sample_img:
+    st.divider()
     st.subheader("Image preview")
     st.image(str(sample_img))
     with st.spinner(f"Loading {option}"):
@@ -58,7 +61,7 @@ elif sample_img:
     predicted_class = model.inference(sample_img)
 
 if predicted_class is not None:
-    st.write(f"Predicted class: {predicted_class}")
+    st.write(f"Predicted traffic class: {predicted_class}")
     st.progress(
         traffic_map[predicted_class],
     )
