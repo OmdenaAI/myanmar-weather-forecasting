@@ -96,6 +96,21 @@ st.set_page_config(
 
 
 st.header("Weather Forecasting")
+st.markdown(
+    "To tackle the weather forecasting problem, we used [open-meteo's Historical"
+    " Weather API](https://open-meteo.com/en/docs/historical-weather-api) to collect"
+    " data from cities in the Southeast Asia region with a focus on the following"
+    " countries: **Myanmar**, **Indonesia** and **Philippines**."
+)
+
+st.markdown(
+    (
+        "We're able to collect historical infomation like temperature, wind speed and"
+        " rain - some of the most straightforward indicators of dangerous weather"
+        " events - to build our models."
+    ),
+    unsafe_allow_html=True,
+)
 
 
 df, cities_df = get_data()
@@ -118,7 +133,12 @@ for value in st.session_state.values():
         fg.add_child(folium.Marker((lat, lng)))
         break
 
-st.subheader("Select a location on the map")
+st.subheader("Select a location")
+st.markdown(
+    "Weather can vary wildly, even within the same country. Click on the map to select"
+    " the location you're interested in knowing the forecast for."
+)
+st.caption("Red dots represent the locations we have data on")
 
 map_data = st_folium(
     m,
@@ -156,8 +176,15 @@ if lat is not None and lng is not None:
             " in a worse forecast"
         )
 
-    st.subheader("Range to forecast")
-    st.caption("Select a start and end date")
+    st.subheader("Select a period")
+    st.write(
+        "Use the calendar widget to select a range (start and end dates). You'll be"
+        " given the model's forecast for that period of time."
+    )
+    st.caption(
+        "Extremely long ranges (spanning over multiple years) may be slow to load and"
+        " give out weird results"
+    )
     st.date_input(
         label="Select the period you wish to know the forecast for",
         key="date_input",
