@@ -22,6 +22,7 @@ https://github.com/OmdenaAI/myanmar-weather-forecasting/assets/32521936/898ea697
 
 
 
+
 # Contribution Guidelines
 - Have a Look at the [project structure](#project-structure) below to understand where to store/upload your contribution
 - If you're creating a task, Go to the task folder and create a new folder with the below naming convention and add a README.md with task details and goals to help other contributors understand
